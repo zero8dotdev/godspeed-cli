@@ -21,6 +21,7 @@ import { readdir } from 'fs/promises';
 
 import { globSync } from "glob";
 import inquirer from "inquirer";
+import setupSocketServer from "./utils/socketshare";
 
 // load .env
 dotenv.config({ path: path.resolve(__dirname, "../.env") });
@@ -178,6 +179,16 @@ export const isAGodspeedProject = () => {
           stdio: "inherit",
         });
       }
+    });
+
+    program
+    .command("studio")
+    .description(
+      "Start the Socket.IO server and expose the current working directory."
+    )
+    .action(async () => {
+      const PORT = 8000;
+      setupSocketServer(PORT);
     });
 
   program
