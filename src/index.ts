@@ -187,7 +187,7 @@ export const isAGodspeedProject = () => {
       "Start the Socket.IO server and expose the current working directory."
     )
     .action(async () => {
-      const PORT = 8000;
+      const PORT = 1729;
       setupSocketServer(PORT);
     });
 

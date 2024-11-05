@@ -254,9 +254,9 @@ const setupSocketServer = async (port: any) => {
   server.listen(port, () => {
     const serverUrl = `http://localhost:${port}`;
     const encodedServerUrl = Buffer.from(serverUrl).toString("base64");
-    const connectUrl = `http://localhost:3000/?serverUrl=${encodedServerUrl}`;
-    // console.log(`Connect URL: ${connectUrl}`);
-    console.log("your files are exported succesfully check godspeed-web");
+    const connectUrl = `http://localhost:3000/dashboard/project?live=${encodedServerUrl}`;
+    console.log("your files are exported succesfully to godspeed studio");
+    console.log(`Click on ${chalk.magenta(connectUrl)} to try out godspeed studio`);
   });
 };
 
