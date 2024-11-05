@@ -10,6 +10,7 @@ import create from "../commands/create/index"; // Adjust this import path as nee
 import { spawnSync, SpawnSyncOptionsWithStringEncoding } from "child_process";
 import { spawn } from "child_process";
 import nodemon from "nodemon"; // Import nodemon to manage the process
+import path from "path";
 
 const version = "1.0.0"; // Replace with the actual version if necessary
 
@@ -41,63 +42,18 @@ const setupSocketServer = async (port: any) => {
     },
   });
 
-  // const getFolderStructure = async (dir: string): Promise<FileStructure[]> => {
-  //   let structure: FileStructure[] = [];
-  //   try {
-  //     if (dir) {
-  //       // Check if the path is a directory
-  //       const stats = await stat(dir);
-  //       if (!stats.isDirectory()) {
-  //         throw new Error(`${dir} is not a directory`);
-  //       }
-
-  //       const files = await readdir(dir, { withFileTypes: true });
-  //       for (const file of files) {
-  //         const fullPath = `${dir}/${file.name}`;
-
-  //         // Ignore certain directories
-  //         if (
-  //           file.name === "node_modules" ||
-  //           file.name === ".template" ||
-  //           file.name === ".vscode"
-  //         ) {
-  //           continue;
-  //         }
-
-  //         if (file.isDirectory()) {
-  //           const children = await getFolderStructure(fullPath);
-  //           structure.push({
-  //             name: file.name,
-  //             path: fullPath,
-  //             type: "directory",
-  //             children: children,
-  //           });
-  //         } else {
-  //           const content = await readFile(fullPath, "utf-8");
-  //           structure.push({
-  //             name: file.name,
-  //             path: fullPath,
-  //             type: "file",
-  //             content: content, // Include the content for files
-  //           });
-  //         }
-  //       }
-  //     }
-  //   } catch (error) {
-  //     console.error("Error reading directory:", error);
-  //   }
-  //   return structure;
-  // };
-
   interface FileStructure {
     name: string;
     path: string;
     content: string;
   }
 
+
+  // Function to get the folder structure with paths relative to the cwd
   const getFolderStructure = async (dir: string): Promise<FileStructure[]> => {
     let structure: FileStructure[] = [];
-
+    const cwd = process.cwd(); // Set the current working directory
+    const rootFolderName = path.basename(dir); // Extract the root folder name
     const traverseDirectory = async (dir: string) => {
       try {
         const stats = await stat(dir);
@@ -107,7 +63,7 @@ const setupSocketServer = async (port: any) => {
 
         const files = await readdir(dir, { withFileTypes: true });
         for (const file of files) {
-          const fullPath = `${dir}/${file.name}`;
+          const fullPath = path.join(dir, file.name);
 
           // Ignore specific directories
           if (["node_modules", ".template", ".vscode"].includes(file.name)) {
@@ -118,9 +74,10 @@ const setupSocketServer = async (port: any) => {
             await traverseDirectory(fullPath); // Recursively process directories
           } else {
             const content = await readFile(fullPath, "utf-8");
+            const relativePath = path.join(rootFolderName, path.relative(cwd, fullPath)); // Include root folder name in path
             structure.push({
               name: file.name,
-              path: fullPath,
+              path: relativePath, // Store only the relative path
               content: content,
             });
           }
@@ -131,7 +88,6 @@ const setupSocketServer = async (port: any) => {
     };
 
     await traverseDirectory(dir);
-    // console.log("structure", structure);
     return structure;
   };
 
@@ -148,7 +104,6 @@ const setupSocketServer = async (port: any) => {
 
     // Handle file updates
     socket.on("file-update", async ({ path, content }: any) => {
-      // console.log("", path, content);
       try {
         await writeFile(path, content, "utf-8");
         socket.emit("file-saved", cwd()); // Emit the saved file path
@@ -269,7 +224,6 @@ const setupSocketServer = async (port: any) => {
 
     // Listen for 'dev' command from the frontend
     socket.on("dev", async (projectName: any) => {
-      // console.log("dev", projectName);
       const projectPath =
         projectName && (await projectExistsInCwd(projectName))
           ? `${currentWorkingDirectory}/${projectName}`
